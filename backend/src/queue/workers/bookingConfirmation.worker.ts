@@ -71,37 +71,26 @@ export function startBookingConfirmationWorker(): Worker {
       try {
         await setupEmail();
         
-        const emailHtml = `
-          <div style="font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px 20px; border-radius: 12px; background-color: #ffffff; border: 1px solid #eaeaea; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-            <div style="text-align: center; margin-bottom: 25px;">
-              <h1 style="color: #4f46e5; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">EventBook</h1>
-            </div>
-            <div style="padding: 30px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #f3f4f6;">
-              <h2 style="color: #111827; margin-top: 0; font-size: 22px; font-weight: 700;">Booking Confirmed! 🎉</h2>
-              <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">Hello,</p>
-              <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">Great news! Your booking for <strong style="color: #111827;">${seats} seat(s)</strong> at <strong style="color: #111827;">'${event.title}'</strong> has been successfully confirmed.</p>
-              
-              <div style="margin: 35px 0; text-align: center;">
-                <span style="background-color: #4f46e5; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">Get Ready for the Event!</span>
-              </div>
-              
-              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 0;">If you have any questions, feel free to reply to this email.<br><br>Enjoy the event!</p>
-            </div>
-            <div style="margin-top: 30px; text-align: center; color: #9ca3af; font-size: 13px;">
-              &copy; ${new Date().getFullYear()} EventBook. All rights reserved.
-            </div>
-          </div>
-        `;
-
-        const emailText = `Hello!\n\nYour booking for ${seats} seat(s) at '${event.title}' has been successfully confirmed.\n\nEnjoy the event!`;
-
         if (resend) {
           const { data, error } = await resend.emails.send({
             from: env.EMAIL_FROM || 'onboarding@resend.dev',
             to: customer.email,
             subject: `Booking Confirmed: ${event.title}`,
-            text: emailText,
-            html: emailHtml,
+            text: `Hello!\n\nYour booking for ${seats} seat(s) at '${event.title}' has been successfully confirmed.\n\nEnjoy the event!`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 8px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <h2 style="color: #333;">Booking Confirmed! 🎉</h2>
+                </div>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">Hello,</p>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">Your booking for <strong style="color: #111;">${seats} seat(s)</strong> at <strong style="color: #111;">'${event.title}'</strong> has been successfully confirmed.</p>
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                  <p style="margin: 0; color: #444;"><strong>Event:</strong> ${event.title}</p>
+                  <p style="margin: 5px 0 0 0; color: #444;"><strong>Seats:</strong> ${seats}</p>
+                </div>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">Enjoy the event!</p>
+              </div>
+            `,
           });
 
           if (error) {
@@ -114,8 +103,21 @@ export function startBookingConfirmationWorker(): Worker {
             from: env.EMAIL_FROM || 'onboarding@resend.dev',
             to: customer.email,
             subject: `Booking Confirmed: ${event.title}`,
-            text: emailText,
-            html: emailHtml,
+            text: `Hello!\n\nYour booking for ${seats} seat(s) at '${event.title}' has been successfully confirmed.\n\nEnjoy the event!`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 8px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <h2 style="color: #333;">Booking Confirmed! 🎉</h2>
+                </div>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">Hello,</p>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">Your booking for <strong style="color: #111;">${seats} seat(s)</strong> at <strong style="color: #111;">'${event.title}'</strong> has been successfully confirmed.</p>
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                  <p style="margin: 0; color: #444;"><strong>Event:</strong> ${event.title}</p>
+                  <p style="margin: 5px 0 0 0; color: #444;"><strong>Seats:</strong> ${seats}</p>
+                </div>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">Enjoy the event!</p>
+              </div>
+            `,
           });
           
           console.log(`✅ Confirmation email successfully dispatched to ${customer.email} via Ethereal`);
