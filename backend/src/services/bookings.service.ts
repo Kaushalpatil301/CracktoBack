@@ -207,6 +207,15 @@ export async function partialCancelBooking(
       where: { id: bookingId },
       data: { seats: { decrement: seatsToCancel } },
     }),
+    prisma.booking.create({
+      data: {
+        eventId: booking.eventId,
+        customerId: booking.customerId,
+        seats: seatsToCancel,
+        status: 'CANCELLED',
+        idempotencyKey: `${booking.idempotencyKey}-cancel-${Date.now()}`,
+      },
+    }),
     prisma.event.update({
       where: { id: booking.eventId },
       data: { availableSeats: { increment: seatsToCancel } },
