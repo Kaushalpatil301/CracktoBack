@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin, Users, Share2 } from 'lucide-react';
 import { apiFetch, ApiError } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import { EventData } from '../components/EventCard';
@@ -62,6 +62,27 @@ export default function EventDetails() {
       setBookingError((err as ApiError).message || 'Failed to initiate booking');
       setIsBooking(false);
     }
+  const handleShare = async () => {
+    if (!event) return;
+    const url = window.location.href;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: event.title,
+          url: url,
+        });
+      } catch (err) {
+        // User cancelled share or failed
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('Event link copied to clipboard!');
+      } catch (err) {
+        alert('Failed to copy link');
+      }
+    }
   };
 
   if (loading) {
@@ -95,7 +116,12 @@ export default function EventDetails() {
           )}
         </div>
 
-        <h1 className="neo-mt-4 neo-text-hero">{event.title}</h1>
+        <div className="neo-flex-between neo-align-center neo-mt-4">
+          <h1 className="neo-text-hero neo-mb-0">{event.title}</h1>
+          <button onClick={handleShare} className="neo-btn neo-btn-black" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
+            <Share2 size={20} /> Share
+          </button>
+        </div>
         
         <div className="neo-card-details neo-mt-4">
           <div className="neo-icon-text neo-text-xl">

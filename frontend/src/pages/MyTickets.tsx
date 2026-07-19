@@ -16,15 +16,45 @@ interface Booking {
   };
 }
 
+interface GroupedBooking {
+  event: Booking['event'];
+  status: Booking['status'];
+  seats: number;
+  totalPrice: number;
+  bookingIds: string[];
+}
+
 export default function MyTickets() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [groupedBookings, setGroupedBookings] = useState<GroupedBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBookings = async () => {
     try {
       const data = await apiFetch<{ bookings: Booking[] }>('/bookings/me');
-      setBookings(data.bookings);
+      
+      // Group bookings by event.id + status
+      const groups = new Map<string, GroupedBooking>();
+      
+      for (const booking of data.bookings) {
+        const key = `${booking.event.id}-${booking.status}`;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            event: booking.event,
+            status: booking.status,
+            seats: 0,
+            totalPrice: 0,
+            bookingIds: [],
+          });
+        }
+        
+        const group = groups.get(key)!;
+        group.seats += booking.seats;
+        group.totalPrice += booking.totalPrice;
+        group.bookingIds.push(booking.id);
+      }
+      
+      setGroupedBookings(Array.from(groups.values()));
     } catch (err: any) {
       setError((err as ApiError).message || 'Failed to load tickets');
     } finally {
@@ -36,17 +66,22 @@ export default function MyTickets() {
     fetchBookings();
   }, []);
 
-  const handleCancel = async (bookingId: string) => {
-    if (!window.confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
+  const handleCancel = async (bookingIds: string[]) => {
+    if (!window.confirm('Are you sure you want to cancel all tickets for this event? This action cannot be undone.')) {
       return;
     }
     
     try {
-      await apiFetch(`/bookings/${bookingId}`, { method: 'DELETE' });
+      // Cancel all bookings in this group concurrently
+      await Promise.all(
+        bookingIds.map(id => apiFetch(`/bookings/${id}`, { method: 'DELETE' }))
+      );
       // Refresh the list after cancellation
       fetchBookings();
     } catch (err: any) {
-      alert((err as ApiError).message || 'Failed to cancel booking');
+      alert((err as ApiError).message || 'Failed to cancel booking(s)');
+      // Fetch anyway to show the updated state if some succeeded
+      fetchBookings();
     }
   };
 
@@ -63,30 +98,30 @@ export default function MyTickets() {
 
       {error ? (
         <div className="neo-error-banner">{error}</div>
-      ) : bookings.length === 0 ? (
+      ) : groupedBookings.length === 0 ? (
         <div className="neo-card">
           <h3>No tickets found.</h3>
           <p>Head to the homepage to discover great events!</p>
         </div>
       ) : (
         <div className="neo-grid">
-          {bookings.map((booking) => {
-            const date = new Date(booking.event.startTime).toLocaleDateString('en-US', {
+          {groupedBookings.map((group, index) => {
+            const date = new Date(group.event.startTime).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
               hour: 'numeric',
               minute: '2-digit',
             });
-            const priceFormatted = booking.totalPrice > 0 ? `$${(booking.totalPrice / 100).toFixed(2)}` : 'FREE';
+            const priceFormatted = group.totalPrice > 0 ? `$${(group.totalPrice / 100).toFixed(2)}` : 'FREE';
 
             return (
-              <div key={booking.id} className="neo-card">
+              <div key={`${group.event.id}-${group.status}-${index}`} className="neo-card">
                 <div className="neo-flex-between">
-                  <span className="neo-tag">{booking.status}</span>
+                  <span className="neo-tag">{group.status}</span>
                   <span className="neo-text-bold">{priceFormatted}</span>
                 </div>
                 
-                <h3 className="neo-mt-4">{booking.event.title}</h3>
+                <h3 className="neo-mt-4">{group.event.title}</h3>
                 
                 <div className="neo-card-details neo-mt-4">
                   <div className="neo-icon-text">
@@ -95,20 +130,20 @@ export default function MyTickets() {
                   </div>
                   <div className="neo-icon-text">
                     <MapPin size={18} />
-                    <span>{booking.event.venue}</span>
+                    <span>{group.event.venue}</span>
                   </div>
                   <div className="neo-icon-text">
                     <Ticket size={18} />
-                    <span>{booking.seats} seat(s) booked</span>
+                    <span>{group.seats} seat(s) booked</span>
                   </div>
                 </div>
 
-                {booking.status !== 'CANCELLED' && (
+                {group.status !== 'CANCELLED' && (
                   <button 
                     className="neo-btn neo-w-full neo-mt-4 neo-btn-black" 
-                    onClick={() => handleCancel(booking.id)}
+                    onClick={() => handleCancel(group.bookingIds)}
                   >
-                    <XCircle size={18} className="neo-mr-2" /> Cancel Booking
+                    <XCircle size={18} className="neo-mr-2" /> Cancel Tickets
                   </button>
                 )}
               </div>

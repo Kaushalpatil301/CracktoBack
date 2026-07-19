@@ -161,6 +161,17 @@ export async function cancelBooking(input: CancelBookingServiceInput): Promise<B
       where: { id: booking.eventId },
       data: { availableSeats: { increment: booking.seats } },
     }),
+    prisma.outboxEvent.create({
+      data: {
+        jobType: 'BOOKING_CANCELLATION',
+        payload: {
+          bookingId: booking.id,
+          eventId: booking.eventId,
+          customerId: booking.customerId,
+          seats: booking.seats,
+        },
+      },
+    }),
   ]);
 
   return cancelled;

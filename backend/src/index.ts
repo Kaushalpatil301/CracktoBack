@@ -18,6 +18,7 @@ import { prisma } from './config/db';
 import { createApp } from './app';
 import { startOutboxPoller, stopOutboxPoller } from './queue/outboxPoller';
 import { startBookingConfirmationWorker } from './queue/workers/bookingConfirmation.worker';
+import { startBookingCancellationWorker } from './queue/workers/bookingCancellation.worker';
 import { startEventUpdateWorker } from './queue/workers/eventUpdateNotification.worker';
 import { redisConnection } from './queue/connection';
 
@@ -31,6 +32,7 @@ async function main(): Promise<void> {
   // Start background processes (Steps 9 & 10 ✅)
   startOutboxPoller(1000);
   const bookingWorker = startBookingConfirmationWorker();
+  const cancellationWorker = startBookingCancellationWorker();
   const eventUpdateWorker = startEventUpdateWorker();
 
   // ── Graceful shutdown ──────────────────────────────────────────────────────
@@ -40,6 +42,7 @@ async function main(): Promise<void> {
     // Stop background processes first
     stopOutboxPoller();
     await bookingWorker.close();
+    await cancellationWorker.close();
     await eventUpdateWorker.close();
     await redisConnection.quit();
     
