@@ -62,6 +62,8 @@ export default function EventDetails() {
       setBookingError((err as ApiError).message || 'Failed to initiate booking');
       setIsBooking(false);
     }
+  };
+
   const handleShare = async () => {
     if (!event) return;
     const url = window.location.href;
