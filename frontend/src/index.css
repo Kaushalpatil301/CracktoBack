@@ -302,3 +302,28 @@ h1, h2, h3, h4, h5, h6 {
 .neo-mr-2 {
   margin-right: 0.5rem;
 }
+
+.neo-mb-0 {
+  margin-bottom: 0 !important;
+}
+
+.neo-checkout-header {
+  background-color: #f9f9f9;
+  padding: 1rem;
+  border-bottom: var(--border-thick);
+}
+
+.neo-checkout-total {
+  margin-top: 1rem;
+  border-top: 2px dashed #ccc;
+  padding-top: 1rem;
+}
+
+.neo-text-2xl {
+  font-size: 2rem;
+}
+
+.neo-btn-large {
+  padding: 1rem;
+  font-size: 1.25rem;
+}

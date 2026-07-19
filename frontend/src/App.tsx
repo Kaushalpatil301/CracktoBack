@@ -10,6 +10,7 @@ import OrganizerDashboard from './pages/OrganizerDashboard';
 import CreateEvent from './pages/CreateEvent';
 import EditEvent from './pages/EditEvent';
 import MyTickets from './pages/MyTickets';
+import MockCheckout from './pages/MockCheckout';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute allowedRole="CUSTOMER" />}>
             <Route path="/my-tickets" element={<MyTickets />} />
+            <Route path="/mock-checkout" element={<MockCheckout />} />
           </Route>
 
           {/* Protected Organizer Routes */}
