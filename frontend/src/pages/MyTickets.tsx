@@ -144,14 +144,14 @@ export default function MyTickets() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <Link to={`/events/${group.event.id}`} className="neo-btn neo-btn-secondary" style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <Link to={`/events/${group.event.id}`} className="neo-btn neo-btn-secondary" style={{ flex: 1, padding: '0.75rem 0.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
                       View Details
                     </Link>
                     {group.status !== 'CANCELLED' && cancellingGroupId !== `${group.event.id}-${group.status}-${index}` && (
                       <button 
                         className="neo-btn neo-btn-black" 
-                        style={{ flex: 1 }}
+                        style={{ flex: 1, padding: '0.75rem 0.5rem', fontSize: '0.9rem' }}
                         onClick={() => {
                           if (group.seats === 1) {
                             if (window.confirm('Are you sure you want to cancel this ticket?')) {
@@ -163,7 +163,7 @@ export default function MyTickets() {
                           }
                         }}
                       >
-                        <XCircle size={18} className="neo-mr-2" /> Cancel Tickets
+                        <XCircle size={16} className="neo-mr-2" /> Cancel
                       </button>
                     )}
                   </div>
@@ -171,32 +171,30 @@ export default function MyTickets() {
                   {group.status !== 'CANCELLED' && cancellingGroupId === `${group.event.id}-${group.status}-${index}` && (
                     <div style={{ border: '2px dashed var(--color-border)', padding: '1rem', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <label className="neo-label">How many seats to cancel?</label>
-                      <div className="neo-flex-between neo-align-center" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         <input 
                           type="number" 
                           className="neo-input" 
-                          style={{ width: '80px', padding: '0.5rem' }}
+                          style={{ width: '60px', padding: '0.5rem' }}
                           min="1" 
                           max={group.seats} 
                           value={cancelSeatsAmount} 
                           onChange={(e) => setCancelSeatsAmount(Math.max(1, Math.min(group.seats, parseInt(e.target.value) || 1)))} 
                         />
-                        <div style={{ display: 'flex', gap: '0.5rem', flex: 1, justifyContent: 'flex-end' }}>
-                          <button 
-                            className="neo-btn neo-btn-secondary" 
-                            style={{ padding: '0.5rem 1rem' }}
-                            onClick={() => setCancellingGroupId(null)}
-                          >
-                            Back
-                          </button>
-                          <button 
-                            className="neo-btn neo-btn-black" 
-                            style={{ padding: '0.5rem 1rem' }}
-                            onClick={() => executeCancel(group, cancelSeatsAmount)}
-                          >
-                            Confirm
-                          </button>
-                        </div>
+                        <button 
+                          className="neo-btn neo-btn-secondary" 
+                          style={{ padding: '0.5rem', flex: 1, fontSize: '0.9rem' }}
+                          onClick={() => setCancellingGroupId(null)}
+                        >
+                          Back
+                        </button>
+                        <button 
+                          className="neo-btn neo-btn-black" 
+                          style={{ padding: '0.5rem', flex: 1, fontSize: '0.9rem' }}
+                          onClick={() => executeCancel(group, cancelSeatsAmount)}
+                        >
+                          Confirm
+                        </button>
                       </div>
                     </div>
                   )}
