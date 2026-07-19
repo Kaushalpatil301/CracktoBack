@@ -34,7 +34,7 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-bg);
   color: var(--color-text);
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -42,16 +42,26 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: -0.05em;
-  line-height: 1.1;
+  line-height: 1.2;
   margin-bottom: 1rem;
 }
+
+h1 { font-size: clamp(2rem, 5vw, 3rem); }
+h2 { font-size: clamp(1.5rem, 4vw, 2.25rem); }
+h3 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
 
 /* Utility Classes matching Tokens */
 
 .neo-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  .neo-container {
+    padding: 2rem;
+  }
 }
 
 .neo-card {
@@ -129,11 +139,14 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .neo-nav {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .neo-flex-center {
@@ -231,7 +244,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .neo-hero-title {
-  font-size: 2.5rem;
+  font-size: clamp(2.5rem, 8vw, 4rem);
   margin-bottom: 1rem;
 }
 
@@ -261,7 +274,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .neo-text-hero {
-  font-size: 3rem;
+  font-size: clamp(2rem, 6vw, 3.5rem);
 }
 
 .neo-text-pre-wrap {
