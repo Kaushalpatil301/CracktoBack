@@ -12,11 +12,9 @@ services:
       - key: PORT
         value: 3000
       - key: DATABASE_URL
-        fromDatabase:
-          name: eventbook-db
-          property: connectionString
+        sync: false # Paste your Forever-Free Neon.tech Postgres URL here
       - key: REDIS_URL
-        sync: false # Requires manual entry in the Render dashboard from an Upstash instance.
+        sync: false # Paste your Forever-Free Upstash Redis URL here
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
@@ -26,9 +24,3 @@ services:
       - key: POLLER_INTERVAL_MS
         value: 2000
     healthCheckPath: /health
-
-databases:
-  # Free PostgreSQL Database on Render
-  - name: eventbook-db
-    databaseName: eventbook
-    user: eventbook_user
