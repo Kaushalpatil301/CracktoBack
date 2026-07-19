@@ -34,6 +34,12 @@ export function createApp(): express.Application {
 
   app.use(express.json());
 
+  // Prevent browser caching of API responses
+  app.use((_req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    next();
+  });
+
   // ── Application Routes ──────────────────────────────────────────────────
   app.use('/auth', authRouter);
   app.use('/events', eventsRouter);

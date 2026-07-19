@@ -35,7 +35,7 @@ export default function MyTickets() {
 
   const fetchBookings = async () => {
     try {
-      const data = await apiFetch<{ bookings: Booking[] }>('/bookings/me');
+      const data = await apiFetch<{ bookings: Booking[] }>(`/bookings/me?_t=${Date.now()}`);
       
       const groups = new Map<string, GroupedBooking>();
       
@@ -124,11 +124,9 @@ export default function MyTickets() {
             const priceFormatted = group.totalPrice > 0 ? `$${(group.totalPrice / 100).toFixed(2)}` : 'FREE';
 
             return (
-              <div key={group.event.id} className="neo-card" style={{ border: group.cancelledSeats > 0 && group.confirmedSeats === 0 ? '3px solid #ff6b6b' : '3px solid var(--color-black)' }}>
+              <div key={group.event.id} className="neo-card">
                 <div className="neo-flex-between">
-                  <span className="neo-tag" style={{ backgroundColor: group.confirmedSeats === 0 ? '#ff6b6b' : group.cancelledSeats > 0 ? '#ffd166' : 'var(--color-primary)', color: group.confirmedSeats === 0 ? '#fff' : '#000' }}>
-                    {group.confirmedSeats > 0 && group.cancelledSeats > 0 ? 'PARTIALLY CANCELLED' : group.confirmedSeats > 0 ? 'CONFIRMED' : 'CANCELLED'}
-                  </span>
+                  <span className="neo-tag">{group.confirmedSeats > 0 ? 'CONFIRMED' : 'CANCELLED'}</span>
                   <span className="neo-text-bold">{priceFormatted}</span>
                 </div>
                 
@@ -145,11 +143,11 @@ export default function MyTickets() {
                   </div>
                   <div className="neo-icon-text" style={{ alignItems: 'flex-start' }}>
                     <Ticket size={18} style={{ marginTop: '4px' }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span className="neo-text-bold" style={{ fontSize: '1.1rem' }}>{group.confirmedSeats} seat(s) confirmed</span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="neo-text-bold">{group.confirmedSeats} seat(s) confirmed</span>
                       {group.cancelledSeats > 0 && (
-                        <span style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: '1rem', backgroundColor: '#ffebee', padding: '2px 6px', borderRadius: '4px', display: 'inline-block' }}>
-                          ⚠️ {group.cancelledSeats} seat(s) cancelled
+                        <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                          {group.cancelledSeats} seat(s) cancelled
                         </span>
                       )}
                     </div>
