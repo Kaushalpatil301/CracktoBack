@@ -1,29 +1,24 @@
 import { Worker, Job } from 'bullmq';
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { prisma } from '../../config/db';
 import { redisConnection } from '../connection';
 import { QUEUE_NAME_NOTIFICATIONS } from '../queues';
 import { env } from '../../config/env';
 
-// Lazily load the transporter
-let transporter: nodemailer.Transporter | null = null;
+// Lazily load the transporter for fallback
+let testTransporter: nodemailer.Transporter | null = null;
+let resend: Resend | null = null;
 
-async function getTransporter() {
-  if (transporter) return transporter;
-
-  if (env.SMTP_USER && env.SMTP_PASS) {
-    transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST || 'smtp.sendgrid.net',
-      port: env.SMTP_PORT || 587,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
-      },
-    });
-    console.log(`[Worker:BookingCancellation] Using production SMTP (${env.SMTP_HOST})`);
-  } else {
+async function setupEmail() {
+  if (env.SMTP_USER === 'resend' && env.SMTP_PASS) {
+    if (!resend) {
+      resend = new Resend(env.SMTP_PASS);
+      console.log(`[Worker:BookingCancellation] Using Resend API`);
+    }
+  } else if (!testTransporter) {
     const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
+    testTransporter = nodemailer.createTransport({
       host: testAccount.smtp.host,
       port: testAccount.smtp.port,
       secure: testAccount.smtp.secure,
@@ -34,8 +29,6 @@ async function getTransporter() {
     });
     console.log(`[Worker:BookingCancellation] Using Ethereal TestMail. No SMTP credentials found.`);
   }
-
-  return transporter;
 }
 
 interface BookingCancellationPayload {
@@ -47,8 +40,7 @@ interface BookingCancellationPayload {
 
 export function startBookingCancellationWorker(): Worker {
   console.log('[Worker:BookingCancellation] Started');
-  // Pre-initialize transporter in the background so it's ready
-  getTransporter().catch(console.error);
+  setupEmail().catch(console.error);
 
   return new Worker(
     QUEUE_NAME_NOTIFICATIONS,
@@ -69,19 +61,32 @@ export function startBookingCancellationWorker(): Worker {
       console.log(`\n📧 [CANCELLATION EMAIL ATTEMPT] to ${customer.email}:`);
       
       try {
-        const mailTransporter = await getTransporter();
-        const info = await mailTransporter.sendMail({
-          from: env.EMAIL_FROM,
-          to: customer.email,
-          subject: `Booking Cancelled: ${event.title}`,
-          text: `Hello!\n\nYour booking for ${seats} seat(s) at '${event.title}' has been successfully cancelled.\n\nWe hope to see you at another event soon!`,
-          html: `<h3>Booking Cancelled</h3><p>Hello,</p><p>Your booking for <strong>${seats} seat(s)</strong> at <strong>'${event.title}'</strong> has been successfully cancelled.</p><p>We hope to see you at another event soon!</p>`,
-        });
+        await setupEmail();
         
-        console.log(`✅ Cancellation email successfully dispatched to ${customer.email}`);
-        
-        // If we are using Ethereal testmail, print the preview URL
-        if (!env.SMTP_USER) {
+        if (resend) {
+          const { data, error } = await resend.emails.send({
+            from: env.EMAIL_FROM || 'onboarding@resend.dev',
+            to: customer.email,
+            subject: `Booking Cancelled: ${event.title}`,
+            text: `Hello!\n\nYour booking for ${seats} seat(s) at '${event.title}' has been successfully cancelled.\n\nWe hope to see you at another event soon!`,
+            html: `<h3>Booking Cancelled</h3><p>Hello,</p><p>Your booking for <strong>${seats} seat(s)</strong> at <strong>'${event.title}'</strong> has been successfully cancelled.</p><p>We hope to see you at another event soon!</p>`,
+          });
+
+          if (error) {
+            console.error(`❌ Resend failed to send cancellation email to ${customer.email}:`, error);
+          } else {
+            console.log(`✅ Cancellation email successfully dispatched to ${customer.email} via Resend. ID: ${data?.id}`);
+          }
+        } else if (testTransporter) {
+          const info = await testTransporter.sendMail({
+            from: env.EMAIL_FROM || 'onboarding@resend.dev',
+            to: customer.email,
+            subject: `Booking Cancelled: ${event.title}`,
+            text: `Hello!\n\nYour booking for ${seats} seat(s) at '${event.title}' has been successfully cancelled.\n\nWe hope to see you at another event soon!`,
+            html: `<h3>Booking Cancelled</h3><p>Hello,</p><p>Your booking for <strong>${seats} seat(s)</strong> at <strong>'${event.title}'</strong> has been successfully cancelled.</p><p>We hope to see you at another event soon!</p>`,
+          });
+          
+          console.log(`✅ Cancellation email successfully dispatched to ${customer.email} via Ethereal`);
           console.log(`🔍 [TESTMAIL PREVIEW]: ${nodemailer.getTestMessageUrl(info)}`);
         }
       } catch (error) {
