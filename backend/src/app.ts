@@ -32,12 +32,16 @@ export function createApp(): express.Application {
   app.use(helmet());
   app.use(cors({ origin: 'http://localhost:5173' }));
 
-  // ── Webhooks ──────────────────────────────────────────────────────────────
-  // Must come BEFORE express.json() because Stripe needs the raw body
-  app.use('/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
-
-  // ── Global middleware (JSON) ──────────────────────────────────────────────
   app.use(express.json());
+
+  // ── Application Routes ──────────────────────────────────────────────────
+  app.use('/auth', authRouter);
+  app.use('/events', eventsRouter);
+  // Re-mount events under bookings for logical hierarchy
+  app.use('/events', eventBookingsRouter);
+  app.use('/bookings', bookingsRouter);
+  app.use('/payments', paymentRoutes);
+  app.use('/webhook', webhookRoutes);
 
   // ── Health route ──────────────────────────────────────────────────────────
   // Verifies the process is alive AND Postgres is reachable.
