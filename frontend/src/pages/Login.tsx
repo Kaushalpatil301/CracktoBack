@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { apiFetch, ApiError } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -11,6 +11,8 @@ export default function Login() {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +26,7 @@ export default function Login() {
       });
       
       login(data.token, data.user);
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError((err as ApiError).message || 'Failed to login');
     } finally {

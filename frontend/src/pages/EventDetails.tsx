@@ -47,17 +47,16 @@ export default function EventDetails() {
 
     try {
       const idempotencyKey = crypto.randomUUID();
-      const data = await apiFetch<{ url: string }>('/payments/create-checkout-session', {
-        method: 'POST',
-        body: JSON.stringify({
-          eventId: id,
-          seats,
-          idempotencyKey,
-        }),
+      const searchParams = new URLSearchParams({
+        eventId: id as string,
+        seats: seats.toString(),
+        idempotencyKey,
+        customerId: user.id,
+        totalPrice: (event.price * seats).toString()
       });
 
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
+      // Redirect directly to the mock checkout page (free gateway)
+      navigate(`/mock-checkout?${searchParams.toString()}`);
     } catch (err: any) {
       setBookingError((err as ApiError).message || 'Failed to initiate booking');
       setIsBooking(false);
@@ -149,13 +148,33 @@ export default function EventDetails() {
             </div>
           )}
 
-          <button 
-            className="neo-btn neo-w-full neo-mt-4" 
-            onClick={handleBook}
-            disabled={event.availableSeats <= 0 || isBooking}
-          >
-            {isBooking ? 'Redirecting to Checkout...' : event.availableSeats <= 0 ? 'Sold Out' : 'Checkout'}
-          </button>
+          {!user ? (
+            <div className="neo-mt-4">
+              <p className="neo-text-bold neo-mb-2">Login or Register to checkout</p>
+              <div className="neo-flex-between" style={{ gap: '1rem' }}>
+                <button 
+                  className="neo-btn neo-w-full" 
+                  onClick={() => navigate('/login', { state: { from: `/events/${id}` } })}
+                >
+                  Login
+                </button>
+                <button 
+                  className="neo-btn neo-w-full" 
+                  onClick={() => navigate('/register', { state: { from: `/events/${id}` } })}
+                >
+                  Register
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button 
+              className="neo-btn neo-w-full neo-mt-4" 
+              onClick={handleBook}
+              disabled={event.availableSeats <= 0 || isBooking}
+            >
+              {isBooking ? 'Redirecting to Checkout...' : event.availableSeats <= 0 ? 'Sold Out' : 'Checkout'}
+            </button>
+          )}
         </div>
       </div>
     </div>
