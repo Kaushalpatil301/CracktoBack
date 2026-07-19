@@ -41,6 +41,13 @@ const EnvSchema = z.object({
     .default('12')
     .transform((v) => parseInt(v, 10))
     .pipe(z.number().int().min(8).max(14)),
+
+  // Email (Optional - provided by GitHub Student Pack like SendGrid/Mailgun)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().transform(Number).optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  EMAIL_FROM: z.string().default('noreply@eventbook.com'),
 });
 
 // Parse at module load time. Any missing/invalid var throws immediately.

@@ -30,7 +30,8 @@ export default function MockCheckout() {
       // Simulate network delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const response = await fetch('http://localhost:3000/webhook/mock', {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${API_BASE_URL}/webhook/mock`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -6,7 +6,7 @@
  * Normalizes error responses so components can consistently catch and display them.
  */
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export interface ApiError {
   code: string;
