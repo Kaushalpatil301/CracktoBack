@@ -1,0 +1,123 @@
+// prisma/schema.prisma
+// EventBook — Phase 1 schema
+// Do not add new models or fields without updating progress-tracker.md and architecture.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ORGANIZER
+  CUSTOMER
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum JobType {
+  BOOKING_CONFIRMATION
+  EVENT_UPDATE_NOTIFICATION
+}
+
+// ---------------------------------------------------------------------------
+// User
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime  @default(now())
+
+  // Relations
+  events   Event[]    @relation("OrganizerEvents")
+  bookings Booking[]  @relation("CustomerBookings")
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Event
+// ---------------------------------------------------------------------------
+
+model Event {
+  id              String   @id @default(uuid())
+  organizerId     String
+  title           String
+  description     String
+  venue           String
+  startTime       DateTime
+  totalSeats      Int
+  availableSeats  Int
+  price           Int      @default(0) // Price in cents (e.g. 1000 = $10.00). Default to 0 for backward compatibility with Phase 1 data.
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  // Relations
+  organizer User      @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  bookings  Booking[] @relation("EventBookings")
+
+  @@map("events")
+}
+
+// ---------------------------------------------------------------------------
+// Booking
+// ---------------------------------------------------------------------------
+// idempotencyKey: supplied by the client via Idempotency-Key header.
+// UNIQUE(customerId, idempotencyKey) — DB-enforced guard against duplicate submits.
+// seats: number of seats this booking covers (quantity-based, no seat-map selection).
+
+model Booking {
+  id              String        @id @default(uuid())
+  eventId         String
+  customerId      String
+  seats           Int
+  status          BookingStatus @default(CONFIRMED)
+  idempotencyKey  String
+  createdAt       DateTime      @default(now())
+
+  // Relations
+  event    Event @relation("EventBookings", fields: [eventId], references: [id])
+  customer User  @relation("CustomerBookings", fields: [customerId], references: [id])
+
+  // Idempotency guarantee: a retried request with the same key returns the
+  // existing booking rather than creating a duplicate.
+  @@unique([customerId, idempotencyKey])
+  @@map("bookings")
+}
+
+// ---------------------------------------------------------------------------
+// OutboxEvent
+// ---------------------------------------------------------------------------
+// Written in the SAME Postgres transaction as the triggering business write
+// (booking insert or event update). The outbox poller reads unprocessed rows,
+// enqueues them into BullMQ, then sets processedAt. This guarantees no job is
+// silently lost if the process crashes between DB commit and queue enqueue.
+//
+// payload: JSONB — job-type-specific data (e.g. bookingId, eventId, customerId).
+// processedAt: NULL = not yet relayed to BullMQ; non-NULL = already enqueued.
+
+model OutboxEvent {
+  id          String    @id @default(uuid())
+  jobType     JobType
+  payload     Json
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Index for the poller query: WHERE processedAt IS NULL ORDER BY createdAt
+  @@index([processedAt, createdAt])
+  @@map("outbox_events")
+}
