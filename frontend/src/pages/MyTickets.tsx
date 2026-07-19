@@ -67,20 +67,36 @@ export default function MyTickets() {
   }, []);
 
   const handleCancel = async (bookingIds: string[]) => {
-    if (!window.confirm('Are you sure you want to cancel all tickets for this event? This action cannot be undone.')) {
-      return;
+    let cancelCount = bookingIds.length;
+
+    if (bookingIds.length > 1) {
+      const input = window.prompt(
+        `You have ${bookingIds.length} tickets for this event. How many would you like to cancel?`, 
+        bookingIds.length.toString()
+      );
+      if (input === null) return;
+      
+      const parsed = parseInt(input, 10);
+      if (isNaN(parsed) || parsed < 1 || parsed > bookingIds.length) {
+        alert('Invalid number of tickets.');
+        return;
+      }
+      cancelCount = parsed;
+    } else {
+      if (!window.confirm('Are you sure you want to cancel this ticket? This action cannot be undone.')) {
+        return;
+      }
     }
     
+    const idsToCancel = bookingIds.slice(0, cancelCount);
+
     try {
-      // Cancel all bookings in this group concurrently
       await Promise.all(
-        bookingIds.map(id => apiFetch(`/bookings/${id}`, { method: 'DELETE' }))
+        idsToCancel.map(id => apiFetch(`/bookings/${id}`, { method: 'DELETE' }))
       );
-      // Refresh the list after cancellation
       fetchBookings();
     } catch (err: any) {
       alert((err as ApiError).message || 'Failed to cancel booking(s)');
-      // Fetch anyway to show the updated state if some succeeded
       fetchBookings();
     }
   };

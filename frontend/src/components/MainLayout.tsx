@@ -6,8 +6,10 @@ export default function MainLayout() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
     navigate('/');
+    setTimeout(() => {
+      logout();
+    }, 10);
   };
 
   return (
