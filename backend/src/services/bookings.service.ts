@@ -213,8 +213,8 @@ export async function partialCancelBooking(
         customerId: booking.customerId,
         seats: seatsToCancel,
         status: 'CANCELLED',
-        idempotencyKey: `${booking.idempotencyKey}-cancel-${Date.now()}`,
-      },
+        idempotencyKey: `${booking.idempotencyKey}-cancel-${Date.now()}`
+      }
     }),
     prisma.event.update({
       where: { id: booking.eventId },

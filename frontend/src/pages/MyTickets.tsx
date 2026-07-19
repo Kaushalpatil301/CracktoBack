@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Ticket, XCircle } from 'lucide-react';
 import { apiFetch, ApiError } from '../api';
 
@@ -142,9 +143,33 @@ export default function MyTickets() {
                   </div>
                 </div>
 
-                {group.status !== 'CANCELLED' && (
-                  cancellingGroupId === `${group.event.id}-${group.status}-${index}` ? (
-                    <div className="neo-mt-4" style={{ border: '2px dashed var(--color-border)', padding: '1rem', backgroundColor: '#fff' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <Link to={`/events/${group.event.id}`} className="neo-btn neo-btn-secondary" style={{ flex: 1 }}>
+                      View Details
+                    </Link>
+                    {group.status !== 'CANCELLED' && cancellingGroupId !== `${group.event.id}-${group.status}-${index}` && (
+                      <button 
+                        className="neo-btn neo-btn-black" 
+                        style={{ flex: 1 }}
+                        onClick={() => {
+                          if (group.seats === 1) {
+                            if (window.confirm('Are you sure you want to cancel this ticket?')) {
+                              executeCancel(group, 1);
+                            }
+                          } else {
+                            setCancellingGroupId(`${group.event.id}-${group.status}-${index}`);
+                            setCancelSeatsAmount(group.seats);
+                          }
+                        }}
+                      >
+                        <XCircle size={18} className="neo-mr-2" /> Cancel Tickets
+                      </button>
+                    )}
+                  </div>
+
+                  {group.status !== 'CANCELLED' && cancellingGroupId === `${group.event.id}-${group.status}-${index}` && (
+                    <div style={{ border: '2px dashed var(--color-border)', padding: '1rem', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <label className="neo-label">How many seats to cancel?</label>
                       <div className="neo-flex-between neo-align-center" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
                         <input 
@@ -174,24 +199,8 @@ export default function MyTickets() {
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <button 
-                      className="neo-btn neo-w-full neo-mt-4 neo-btn-black" 
-                      onClick={() => {
-                        if (group.seats === 1) {
-                          if (window.confirm('Are you sure you want to cancel this ticket?')) {
-                            executeCancel(group, 1);
-                          }
-                        } else {
-                          setCancellingGroupId(`${group.event.id}-${group.status}-${index}`);
-                          setCancelSeatsAmount(group.seats);
-                        }
-                      }}
-                    >
-                      <XCircle size={18} className="neo-mr-2" /> Cancel Tickets
-                    </button>
-                  )
-                )}
+                  )}
+                </div>
               </div>
             );
           })}
