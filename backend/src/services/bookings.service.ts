@@ -168,9 +168,15 @@ export async function cancelBooking(input: CancelBookingServiceInput): Promise<B
 
 // ── listMyBookings ─────────────────────────────────────────────────────────
 
-export async function listMyBookings(customerId: string): Promise<Booking[]> {
-  return prisma.booking.findMany({
+export async function listMyBookings(customerId: string) {
+  const bookings = await prisma.booking.findMany({
     where: { customerId },
     orderBy: { createdAt: 'desc' },
+    include: { event: true },
   });
+
+  return bookings.map(b => ({
+    ...b,
+    totalPrice: b.seats * b.event.price,
+  }));
 }

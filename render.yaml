@@ -1,0 +1,34 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: eventbook-api
+    env: node
+    rootDir: backend
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: eventbook-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false # Requires manual entry in the Render dashboard from an Upstash instance.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: BCRYPT_ROUNDS
+        value: 10
+      - key: POLLER_INTERVAL_MS
+        value: 2000
+    healthCheckPath: /health
+
+databases:
+  # Free PostgreSQL Database on Render
+  - name: eventbook-db
+    databaseName: eventbook
+    user: eventbook_user

@@ -16,7 +16,7 @@
  */
 
 import { prisma } from '../config/db';
-import { NotFoundError } from '../types/errors';
+import { NotFoundError, ConflictError } from '../types/errors';
 import type { CreateEventInput, UpdateEventInput, EventListQuery } from '../schemas/events.schemas';
 import type { Event } from '@prisma/client';
 
@@ -84,6 +84,12 @@ export async function deleteEvent(eventId: string): Promise<void> {
     select: { id: true },
   });
   if (!existing) throw new NotFoundError('Event');
+
+  // Check if the event has any bookings to prevent foreign key constraint violations
+  const bookingsCount = await prisma.booking.count({ where: { eventId } });
+  if (bookingsCount > 0) {
+    throw new ConflictError('Cannot cancel an event that has booked tickets. Please refund or cancel bookings first.');
+  }
 
   await prisma.event.delete({ where: { id: eventId } });
 }

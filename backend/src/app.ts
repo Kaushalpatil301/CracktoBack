@@ -30,7 +30,7 @@ export function createApp(): express.Application {
 
   // ── Global middleware (Pre-JSON) ──────────────────────────────────────────
   app.use(helmet());
-  app.use(cors({ origin: 'http://localhost:5173' }));
+  app.use(cors({ origin: '*' })); // Allow all origins for Vercel deployment
 
   app.use(express.json());
 

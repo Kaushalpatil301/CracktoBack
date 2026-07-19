@@ -27,6 +27,19 @@ export default function OrganizerDashboard() {
       });
   }, [user]);
 
+  const handleDelete = async (eventId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this event? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      await apiFetch(`/events/${eventId}`, { method: 'DELETE' });
+      setEvents((prev) => prev.filter(e => e.id !== eventId));
+    } catch (err: any) {
+      alert((err as ApiError).message || 'Failed to cancel event');
+    }
+  };
+
   if (loading) {
     return <div className="neo-flex-center neo-page-min-height"><h2>Loading dashboard...</h2></div>;
   }
@@ -80,9 +93,14 @@ export default function OrganizerDashboard() {
                   </div>
                 </div>
 
-                <Link to={`/organizer/events/${event.id}/edit`} className="neo-btn neo-w-full">
-                  Edit Event
-                </Link>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                  <Link to={`/organizer/events/${event.id}/edit`} className="neo-btn neo-w-full">
+                    Edit Event
+                  </Link>
+                  <button onClick={() => handleDelete(event.id)} className="neo-btn neo-btn-black neo-w-full">
+                    Cancel Event
+                  </button>
+                </div>
               </div>
             );
           })}
