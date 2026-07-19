@@ -118,7 +118,7 @@ export default function EventDetails() {
           )}
         </div>
 
-        <div className="neo-flex-between neo-align-center neo-mt-4">
+        <div className="neo-flex-between neo-mt-4" style={{ alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <h1 className="neo-text-hero neo-mb-0">{event.title}</h1>
           <button onClick={handleShare} className="neo-btn neo-btn-black" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
             <Share2 size={20} /> Share
