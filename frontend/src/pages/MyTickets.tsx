@@ -19,10 +19,10 @@ interface Booking {
 
 interface GroupedBooking {
   event: Booking['event'];
-  status: Booking['status'];
-  seats: number;
+  confirmedSeats: number;
+  cancelledSeats: number;
   totalPrice: number;
-  bookings: Booking[];
+  confirmedBookings: Booking[];
 }
 
 export default function MyTickets() {
@@ -30,7 +30,7 @@ export default function MyTickets() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [cancellingGroupId, setCancellingGroupId] = useState<string | null>(null);
+  const [cancellingEventId, setCancellingEventId] = useState<string | null>(null);
   const [cancelSeatsAmount, setCancelSeatsAmount] = useState(1);
 
   const fetchBookings = async () => {
@@ -40,21 +40,25 @@ export default function MyTickets() {
       const groups = new Map<string, GroupedBooking>();
       
       for (const booking of data.bookings) {
-        const key = `${booking.event.id}-${booking.status}`;
+        const key = booking.event.id;
         if (!groups.has(key)) {
           groups.set(key, {
             event: booking.event,
-            status: booking.status,
-            seats: 0,
+            confirmedSeats: 0,
+            cancelledSeats: 0,
             totalPrice: 0,
-            bookings: [],
+            confirmedBookings: [],
           });
         }
         
         const group = groups.get(key)!;
-        group.seats += booking.seats;
-        group.totalPrice += booking.totalPrice;
-        group.bookings.push(booking);
+        if (booking.status === 'CANCELLED') {
+          group.cancelledSeats += booking.seats;
+        } else {
+          group.confirmedSeats += booking.seats;
+          group.totalPrice += booking.totalPrice;
+          group.confirmedBookings.push(booking);
+        }
       }
       
       setGroupedBookings(Array.from(groups.values()));
@@ -72,7 +76,7 @@ export default function MyTickets() {
   const executeCancel = async (group: GroupedBooking, seatsToCancel: number) => {
     try {
       let remainingToCancel = seatsToCancel;
-      for (const booking of group.bookings) {
+      for (const booking of group.confirmedBookings) {
         if (remainingToCancel <= 0) break;
         
         const cancelForThisBooking = Math.min(booking.seats, remainingToCancel);
@@ -82,7 +86,7 @@ export default function MyTickets() {
         });
         remainingToCancel -= cancelForThisBooking;
       }
-      setCancellingGroupId(null);
+      setCancellingEventId(null);
       fetchBookings();
     } catch (err: any) {
       alert((err as ApiError).message || 'Failed to cancel booking(s)');
@@ -110,7 +114,7 @@ export default function MyTickets() {
         </div>
       ) : (
         <div className="neo-grid">
-          {groupedBookings.map((group, index) => {
+          {groupedBookings.map((group) => {
             const date = new Date(group.event.startTime).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
@@ -120,9 +124,9 @@ export default function MyTickets() {
             const priceFormatted = group.totalPrice > 0 ? `$${(group.totalPrice / 100).toFixed(2)}` : 'FREE';
 
             return (
-              <div key={`${group.event.id}-${group.status}-${index}`} className="neo-card">
+              <div key={group.event.id} className="neo-card">
                 <div className="neo-flex-between">
-                  <span className="neo-tag">{group.status}</span>
+                  <span className="neo-tag">{group.confirmedSeats > 0 ? 'CONFIRMED' : 'CANCELLED'}</span>
                   <span className="neo-text-bold">{priceFormatted}</span>
                 </div>
                 
@@ -137,29 +141,36 @@ export default function MyTickets() {
                     <MapPin size={18} />
                     <span>{group.event.venue}</span>
                   </div>
-                  <div className="neo-icon-text">
-                    <Ticket size={18} />
-                    <span>{group.seats} seat(s) booked</span>
+                  <div className="neo-icon-text" style={{ alignItems: 'flex-start' }}>
+                    <Ticket size={18} style={{ marginTop: '4px' }} />
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="neo-text-bold">{group.confirmedSeats} seat(s) confirmed</span>
+                      {group.cancelledSeats > 0 && (
+                        <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                          {group.cancelledSeats} seat(s) cancelled
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <Link to={`/events/${group.event.id}`} className="neo-btn neo-btn-secondary" style={{ flex: 1, padding: '0.75rem 0.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
                       View Details
                     </Link>
-                    {group.status !== 'CANCELLED' && cancellingGroupId !== `${group.event.id}-${group.status}-${index}` && (
+                    {group.confirmedSeats > 0 && cancellingEventId !== group.event.id && (
                       <button 
                         className="neo-btn neo-btn-black" 
                         style={{ flex: 1, padding: '0.75rem 0.5rem', fontSize: '0.9rem' }}
                         onClick={() => {
-                          if (group.seats === 1) {
+                          if (group.confirmedSeats === 1) {
                             if (window.confirm('Are you sure you want to cancel this ticket?')) {
                               executeCancel(group, 1);
                             }
                           } else {
-                            setCancellingGroupId(`${group.event.id}-${group.status}-${index}`);
-                            setCancelSeatsAmount(group.seats);
+                            setCancellingEventId(group.event.id);
+                            setCancelSeatsAmount(group.confirmedSeats);
                           }
                         }}
                       >
@@ -168,7 +179,7 @@ export default function MyTickets() {
                     )}
                   </div>
 
-                  {group.status !== 'CANCELLED' && cancellingGroupId === `${group.event.id}-${group.status}-${index}` && (
+                  {group.confirmedSeats > 0 && cancellingEventId === group.event.id && (
                     <div style={{ border: '2px dashed var(--color-border)', padding: '1rem', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <label className="neo-label">How many seats to cancel?</label>
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -177,14 +188,14 @@ export default function MyTickets() {
                           className="neo-input" 
                           style={{ width: '60px', padding: '0.5rem' }}
                           min="1" 
-                          max={group.seats} 
+                          max={group.confirmedSeats} 
                           value={cancelSeatsAmount} 
-                          onChange={(e) => setCancelSeatsAmount(Math.max(1, Math.min(group.seats, parseInt(e.target.value) || 1)))} 
+                          onChange={(e) => setCancelSeatsAmount(Math.max(1, Math.min(group.confirmedSeats, parseInt(e.target.value) || 1)))} 
                         />
                         <button 
                           className="neo-btn neo-btn-secondary" 
                           style={{ padding: '0.5rem', flex: 1, fontSize: '0.9rem' }}
-                          onClick={() => setCancellingGroupId(null)}
+                          onClick={() => setCancellingEventId(null)}
                         >
                           Back
                         </button>

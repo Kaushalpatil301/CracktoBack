@@ -118,46 +118,47 @@ export default function EventDetails() {
           )}
         </div>
 
-        <div className="neo-flex-between neo-mt-4" style={{ alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <h1 className="neo-text-hero neo-mb-0">{event.title}</h1>
-          <button onClick={handleShare} className="neo-btn neo-btn-black" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
+        <div className="neo-flex-between neo-mt-4" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <h1 className="neo-text-hero neo-mb-0" style={{ fontSize: '3rem', lineHeight: '1.1' }}>{event.title}</h1>
+          <button onClick={handleShare} className="neo-btn neo-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', marginTop: '0.5rem' }}>
             <Share2 size={20} /> Share
           </button>
         </div>
         
-        <div className="neo-card-details neo-mt-4">
-          <div className="neo-icon-text neo-text-xl">
-            <Calendar size={24} />
-            <span>{date}</span>
+        <div className="neo-card-details neo-mt-4" style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '0', border: '3px solid var(--color-black)' }}>
+          <div className="neo-icon-text neo-text-xl" style={{ marginBottom: '1rem' }}>
+            <Calendar size={28} />
+            <span style={{ fontWeight: 'bold' }}>{date}</span>
           </div>
           <div className="neo-icon-text neo-text-xl">
-            <MapPin size={24} />
+            <MapPin size={28} />
             <span>{event.venue}</span>
           </div>
         </div>
 
-        <div className="neo-card neo-mt-4">
-          <h3>About this event</h3>
-          <p className="neo-mt-4 neo-text-pre-wrap">{event.description}</p>
+        <div className="neo-card neo-mt-4" style={{ backgroundColor: '#f0f0f0' }}>
+          <h3 style={{ fontSize: '1.5rem', borderBottom: '2px solid var(--color-black)', paddingBottom: '0.5rem' }}>About this event</h3>
+          <p className="neo-mt-4 neo-text-pre-wrap" style={{ lineHeight: '1.8', fontSize: '1.1rem' }}>{event.description}</p>
         </div>
       </div>
 
       {/* Right Column: Booking Card */}
       <div>
-        <div className="neo-card neo-sticky">
-          <h3>Get Tickets</h3>
+        <div className="neo-card neo-sticky" style={{ backgroundColor: 'var(--color-primary, #ffd166)', border: '4px solid var(--color-black)', boxShadow: '8px 8px 0 var(--color-black)' }}>
+          <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem' }}>Get Tickets</h2>
           
-          <div className="neo-icon-text neo-mt-4">
-            <Users size={20} />
-            <span>{event.availableSeats} / {event.totalSeats} seats available</span>
+          <div className="neo-icon-text neo-mt-4" style={{ backgroundColor: '#fff', padding: '1rem', border: '2px solid var(--color-black)' }}>
+            <Users size={24} />
+            <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{event.availableSeats} / {event.totalSeats} seats available</span>
           </div>
 
           <div className="neo-mt-4">
-            <label className="neo-label" htmlFor="seats">Number of Seats</label>
+            <label className="neo-label" htmlFor="seats" style={{ fontSize: '1.2rem' }}>Number of Seats</label>
             <input 
               id="seats"
               type="number" 
               className="neo-input" 
+              style={{ fontSize: '1.5rem', padding: '1rem' }}
               value={seats}
               onChange={(e) => setSeats(Math.max(1, Math.min(event.availableSeats, parseInt(e.target.value) || 1)))}
               min="1"
@@ -166,23 +167,24 @@ export default function EventDetails() {
             />
           </div>
 
-          <div className="neo-flex-between neo-mt-4">
-            <span className="neo-text-bold">Total:</span>
-            <span className="neo-text-bold neo-text-xl">{totalPrice}</span>
+          <div className="neo-flex-between neo-mt-4" style={{ backgroundColor: '#fff', padding: '1rem', border: '2px solid var(--color-black)', marginTop: '1.5rem' }}>
+            <span className="neo-text-bold" style={{ fontSize: '1.2rem' }}>Total:</span>
+            <span className="neo-text-bold" style={{ fontSize: '1.8rem' }}>{totalPrice}</span>
           </div>
 
           {bookingError && (
-            <div className="neo-error-banner neo-mt-4">
+            <div className="neo-error-banner neo-mt-4" style={{ backgroundColor: '#ff6b6b', color: '#fff' }}>
               {bookingError}
             </div>
           )}
 
           <button 
-            className="neo-btn neo-w-full neo-mt-4" 
+            className="neo-btn neo-w-full neo-mt-4 neo-btn-black" 
+            style={{ padding: '1.2rem', fontSize: '1.2rem', marginTop: '1.5rem' }}
             onClick={handleBook}
             disabled={event.availableSeats <= 0 || isBooking}
           >
-            {isBooking ? 'Redirecting to Checkout...' : event.availableSeats <= 0 ? 'Sold Out' : 'Checkout'}
+            {isBooking ? 'Redirecting...' : event.availableSeats <= 0 ? 'SOLD OUT' : 'Proceed to Checkout'}
           </button>
         </div>
       </div>
