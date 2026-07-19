@@ -21,7 +21,7 @@ interface GroupedBooking {
   status: Booking['status'];
   seats: number;
   totalPrice: number;
-  bookingIds: string[];
+  bookings: Booking[];
 }
 
 export default function MyTickets() {
@@ -33,7 +33,6 @@ export default function MyTickets() {
     try {
       const data = await apiFetch<{ bookings: Booking[] }>('/bookings/me');
       
-      // Group bookings by event.id + status
       const groups = new Map<string, GroupedBooking>();
       
       for (const booking of data.bookings) {
@@ -44,14 +43,14 @@ export default function MyTickets() {
             status: booking.status,
             seats: 0,
             totalPrice: 0,
-            bookingIds: [],
+            bookings: [],
           });
         }
         
         const group = groups.get(key)!;
         group.seats += booking.seats;
         group.totalPrice += booking.totalPrice;
-        group.bookingIds.push(booking.id);
+        group.bookings.push(booking);
       }
       
       setGroupedBookings(Array.from(groups.values()));
@@ -66,34 +65,40 @@ export default function MyTickets() {
     fetchBookings();
   }, []);
 
-  const handleCancel = async (bookingIds: string[]) => {
-    let cancelCount = bookingIds.length;
+  const handleCancel = async (group: GroupedBooking) => {
+    let seatsToCancel = group.seats;
 
-    if (bookingIds.length > 1) {
+    if (group.seats > 1) {
       const input = window.prompt(
-        `You have ${bookingIds.length} tickets for this event. How many would you like to cancel?`, 
-        bookingIds.length.toString()
+        `You have ${group.seats} tickets for this event. How many would you like to cancel?`, 
+        group.seats.toString()
       );
       if (input === null) return;
       
       const parsed = parseInt(input, 10);
-      if (isNaN(parsed) || parsed < 1 || parsed > bookingIds.length) {
+      if (isNaN(parsed) || parsed < 1 || parsed > group.seats) {
         alert('Invalid number of tickets.');
         return;
       }
-      cancelCount = parsed;
+      seatsToCancel = parsed;
     } else {
       if (!window.confirm('Are you sure you want to cancel this ticket? This action cannot be undone.')) {
         return;
       }
     }
-    
-    const idsToCancel = bookingIds.slice(0, cancelCount);
 
     try {
-      await Promise.all(
-        idsToCancel.map(id => apiFetch(`/bookings/${id}`, { method: 'DELETE' }))
-      );
+      let remainingToCancel = seatsToCancel;
+      for (const booking of group.bookings) {
+        if (remainingToCancel <= 0) break;
+        
+        const cancelForThisBooking = Math.min(booking.seats, remainingToCancel);
+        await apiFetch(`/bookings/${booking.id}/cancel`, { 
+          method: 'PATCH',
+          body: JSON.stringify({ seats: cancelForThisBooking })
+        });
+        remainingToCancel -= cancelForThisBooking;
+      }
       fetchBookings();
     } catch (err: any) {
       alert((err as ApiError).message || 'Failed to cancel booking(s)');
@@ -157,7 +162,7 @@ export default function MyTickets() {
                 {group.status !== 'CANCELLED' && (
                   <button 
                     className="neo-btn neo-w-full neo-mt-4 neo-btn-black" 
-                    onClick={() => handleCancel(group.bookingIds)}
+                    onClick={() => handleCancel(group)}
                   >
                     <XCircle size={18} className="neo-mr-2" /> Cancel Tickets
                   </button>

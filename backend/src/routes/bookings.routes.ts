@@ -30,6 +30,7 @@ import { CreateBookingSchema } from '../schemas/bookings.schemas';
 import {
   createBookingController,
   cancelBookingController,
+  partialCancelBookingController,
   listMyBookingsController,
 } from '../controllers/bookings.controller';
 
@@ -52,6 +53,9 @@ const bookingsRouter = Router();
 
 // GET /bookings/me  — must be defined BEFORE /:id to prevent 'me' matching as an id
 bookingsRouter.get('/me', authenticate, asyncHandler(listMyBookingsController));
+
+// PATCH /bookings/:id/cancel
+bookingsRouter.patch('/:id/cancel', authenticate, asyncHandler(partialCancelBookingController));
 
 // DELETE /bookings/:id
 bookingsRouter.delete('/:id', authenticate, asyncHandler(cancelBookingController));

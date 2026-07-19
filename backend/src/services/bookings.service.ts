@@ -177,6 +177,56 @@ export async function cancelBooking(input: CancelBookingServiceInput): Promise<B
   return cancelled;
 }
 
+// ── partialCancelBooking ───────────────────────────────────────────────────
+
+export async function partialCancelBooking(
+  bookingId: string,
+  customerId: string,
+  seatsToCancel: number
+): Promise<Booking> {
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+
+  if (!booking) throw new NotFoundError('Booking');
+  if (booking.customerId !== customerId) {
+    throw new ForbiddenError('You do not own this booking');
+  }
+
+  if (booking.status === 'CANCELLED') return booking;
+
+  // If cancelling all or more seats, do a full cancellation
+  if (seatsToCancel >= booking.seats) {
+    return cancelBooking({ bookingId, customerId });
+  }
+
+  if (seatsToCancel <= 0) {
+    throw new Error('Seats to cancel must be greater than zero');
+  }
+
+  const [updated] = await prisma.$transaction([
+    prisma.booking.update({
+      where: { id: bookingId },
+      data: { seats: { decrement: seatsToCancel } },
+    }),
+    prisma.event.update({
+      where: { id: booking.eventId },
+      data: { availableSeats: { increment: seatsToCancel } },
+    }),
+    prisma.outboxEvent.create({
+      data: {
+        jobType: 'BOOKING_CANCELLATION',
+        payload: {
+          bookingId: booking.id,
+          eventId: booking.eventId,
+          customerId: booking.customerId,
+          seats: seatsToCancel,
+        },
+      },
+    }),
+  ]);
+
+  return updated;
+}
+
 // ── listMyBookings ─────────────────────────────────────────────────────────
 
 export async function listMyBookings(customerId: string) {
