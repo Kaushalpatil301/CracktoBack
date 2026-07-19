@@ -24,13 +24,13 @@ services:
       - key: POLLER_INTERVAL_MS
         value: 2000
       - key: SMTP_HOST
-        value: smtp.sendgrid.net
+        value: smtp.resend.com
       - key: SMTP_PORT
         value: 587
       - key: SMTP_USER
-        value: apikey
+        value: resend
       - key: SMTP_PASS
-        sync: false # Paste your SendGrid API key here (from GitHub Student Pack)
+        sync: false # Paste your Resend API key here in Render Dashboard
       - key: EMAIL_FROM
-        value: noreply@yourdomain.com
+        value: onboarding@resend.dev
     healthCheckPath: /health
