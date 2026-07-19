@@ -29,6 +29,9 @@ export default function MyTickets() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [cancellingGroupId, setCancellingGroupId] = useState<string | null>(null);
+  const [cancelSeatsAmount, setCancelSeatsAmount] = useState(1);
+
   const fetchBookings = async () => {
     try {
       const data = await apiFetch<{ bookings: Booking[] }>('/bookings/me');
@@ -65,28 +68,7 @@ export default function MyTickets() {
     fetchBookings();
   }, []);
 
-  const handleCancel = async (group: GroupedBooking) => {
-    let seatsToCancel = group.seats;
-
-    if (group.seats > 1) {
-      const input = window.prompt(
-        `You have ${group.seats} tickets for this event. How many would you like to cancel?`, 
-        group.seats.toString()
-      );
-      if (input === null) return;
-      
-      const parsed = parseInt(input, 10);
-      if (isNaN(parsed) || parsed < 1 || parsed > group.seats) {
-        alert('Invalid number of tickets.');
-        return;
-      }
-      seatsToCancel = parsed;
-    } else {
-      if (!window.confirm('Are you sure you want to cancel this ticket? This action cannot be undone.')) {
-        return;
-      }
-    }
-
+  const executeCancel = async (group: GroupedBooking, seatsToCancel: number) => {
     try {
       let remainingToCancel = seatsToCancel;
       for (const booking of group.bookings) {
@@ -99,6 +81,7 @@ export default function MyTickets() {
         });
         remainingToCancel -= cancelForThisBooking;
       }
+      setCancellingGroupId(null);
       fetchBookings();
     } catch (err: any) {
       alert((err as ApiError).message || 'Failed to cancel booking(s)');
@@ -160,12 +143,54 @@ export default function MyTickets() {
                 </div>
 
                 {group.status !== 'CANCELLED' && (
-                  <button 
-                    className="neo-btn neo-w-full neo-mt-4 neo-btn-black" 
-                    onClick={() => handleCancel(group)}
-                  >
-                    <XCircle size={18} className="neo-mr-2" /> Cancel Tickets
-                  </button>
+                  cancellingGroupId === `${group.event.id}-${group.status}-${index}` ? (
+                    <div className="neo-mt-4" style={{ border: '2px dashed var(--color-border)', padding: '1rem', backgroundColor: '#fff' }}>
+                      <label className="neo-label">How many seats to cancel?</label>
+                      <div className="neo-flex-between neo-align-center" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <input 
+                          type="number" 
+                          className="neo-input" 
+                          style={{ width: '80px', padding: '0.5rem' }}
+                          min="1" 
+                          max={group.seats} 
+                          value={cancelSeatsAmount} 
+                          onChange={(e) => setCancelSeatsAmount(Math.max(1, Math.min(group.seats, parseInt(e.target.value) || 1)))} 
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem', flex: 1, justifyContent: 'flex-end' }}>
+                          <button 
+                            className="neo-btn neo-btn-secondary" 
+                            style={{ padding: '0.5rem 1rem' }}
+                            onClick={() => setCancellingGroupId(null)}
+                          >
+                            Back
+                          </button>
+                          <button 
+                            className="neo-btn neo-btn-black" 
+                            style={{ padding: '0.5rem 1rem' }}
+                            onClick={() => executeCancel(group, cancelSeatsAmount)}
+                          >
+                            Confirm
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <button 
+                      className="neo-btn neo-w-full neo-mt-4 neo-btn-black" 
+                      onClick={() => {
+                        if (group.seats === 1) {
+                          if (window.confirm('Are you sure you want to cancel this ticket?')) {
+                            executeCancel(group, 1);
+                          }
+                        } else {
+                          setCancellingGroupId(`${group.event.id}-${group.status}-${index}`);
+                          setCancelSeatsAmount(group.seats);
+                        }
+                      }}
+                    >
+                      <XCircle size={18} className="neo-mr-2" /> Cancel Tickets
+                    </button>
+                  )
                 )}
               </div>
             );
