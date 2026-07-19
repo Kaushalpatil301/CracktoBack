@@ -1,0 +1,10 @@
+services:
+  web:
+    build: 
+      context: .
+    container_name: eventbook_frontend
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    env_file:
+      - .env

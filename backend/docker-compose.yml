@@ -29,5 +29,24 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build: 
+      context: .
+    container_name: eventbook_api
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://eventbook:eventbook@postgres:5432/eventbook
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:

@@ -15,10 +15,6 @@ const EnvSchema = z.object({
   // Worker Settings
   POLLER_INTERVAL_MS: z.string().transform(Number).default('2000'),
 
-  // Stripe (Phase 2)
-  STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
-  STRIPE_WEBHOOK_SECRET: z.string().min(1, 'STRIPE_WEBHOOK_SECRET is required'),
-
   // Server
   PORT: z
     .string()
