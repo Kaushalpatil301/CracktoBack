@@ -34,7 +34,7 @@ export default function EventDetails() {
   const handleBook = async () => {
     if (!event) return;
     if (!user) {
-      navigate('/login');
+      navigate('/login', { state: { from: `/events/${id}` } });
       return;
     }
 
@@ -177,33 +177,13 @@ export default function EventDetails() {
             </div>
           )}
 
-          {!user ? (
-            <div className="neo-mt-4">
-              <p className="neo-text-bold neo-mb-2">Login or Register to checkout</p>
-              <div className="neo-flex-between" style={{ gap: '1rem' }}>
-                <button 
-                  className="neo-btn neo-w-full" 
-                  onClick={() => navigate('/login', { state: { from: `/events/${id}` } })}
-                >
-                  Login
-                </button>
-                <button 
-                  className="neo-btn neo-w-full" 
-                  onClick={() => navigate('/register', { state: { from: `/events/${id}` } })}
-                >
-                  Register
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button 
-              className="neo-btn neo-w-full neo-mt-4" 
-              onClick={handleBook}
-              disabled={event.availableSeats <= 0 || isBooking}
-            >
-              {isBooking ? 'Redirecting to Checkout...' : event.availableSeats <= 0 ? 'Sold Out' : 'Checkout'}
-            </button>
-          )}
+          <button 
+            className="neo-btn neo-w-full neo-mt-4" 
+            onClick={handleBook}
+            disabled={event.availableSeats <= 0 || isBooking}
+          >
+            {isBooking ? 'Redirecting to Checkout...' : event.availableSeats <= 0 ? 'Sold Out' : 'Checkout'}
+          </button>
         </div>
       </div>
     </div>
