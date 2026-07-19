@@ -32,6 +32,7 @@ export default function EventDetails() {
   }, [id]);
 
   const handleBook = async () => {
+    if (!event) return;
     if (!user) {
       navigate('/login');
       return;
